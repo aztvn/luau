@@ -53,14 +53,25 @@ try:
 except Exception as e:
     print(f"Failed to download luau-compile: {e}")
 
-@app.route('/compile', methods=['POST'])
+@app.route('/compile', methods=['POST', 'OPTIONS'])
 def compile_luau():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "preflight_ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+
     code = request.form.get('code')
     if not code:
-        return jsonify({"success": False, "error": "No code provided"}), 400
+        response = jsonify({"success": False, "error": "No code provided"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 400
         
     if not os.path.exists(BINARY_PATH):
-        return jsonify({"success": False, "error": "Compiler binary not found on server"}), 500
+        response = jsonify({"success": False, "error": "Compiler binary not found on server"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 500
 
     fd, temp_path = tempfile.mkstemp(suffix=".luau")
     try:
@@ -70,13 +81,17 @@ def compile_luau():
         cmd = [BINARY_PATH, "text", temp_path, "--dump-constants", "-O0"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         
-        return jsonify({
+        response = jsonify({
             "success": True,
             "output": process.stdout,
             "error": process.stderr if process.returncode != 0 else ""
         })
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        response = jsonify({"success": False, "error": str(e)})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response, 500
     finally:
         os.remove(temp_path)
 

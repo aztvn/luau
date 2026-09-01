@@ -78,7 +78,7 @@ def compile_luau():
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
             f.write(code)
             
-        cmd = [BINARY_PATH, "text", temp_path, "--dump-constants", "-O0"]
+        cmd = [BINARY_PATH, "text", temp_path, "-O0"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         
         response = jsonify({

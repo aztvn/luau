@@ -79,12 +79,16 @@ def compile_luau():
             f.write(code)
             
         cmd = [BINARY_PATH, "text", temp_path, "-O0"]
-        process = subprocess.run(cmd, capture_output=True, text=True)
+        process = subprocess.run(cmd, capture_output=True)
+        
+        import base64
+        stdout_b64 = base64.b64encode(process.stdout).decode('utf-8')
+        stderr_str = process.stderr.decode('utf-8', errors='replace') if process.returncode != 0 else ""
         
         response = jsonify({
             "success": True,
-            "output": process.stdout,
-            "error": process.stderr if process.returncode != 0 else ""
+            "output_b64": stdout_b64,
+            "error": stderr_str
         })
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
